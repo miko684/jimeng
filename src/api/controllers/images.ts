@@ -10,6 +10,11 @@ import { JimengModelConfig, resolveImageModelConfig } from "./models.ts";
 const DEFAULT_ASSISTANT_ID = 513695;
 export const DEFAULT_MODEL = "jimeng-image-5.0-lite";
 const DRAFT_VERSION = "3.3.20";
+// Draft content version matching the official web client payload (the
+// request-level da_version stays 3.3.20). The payload is kept field-for-field
+// aligned with what jimeng.jianying.com sends; the decisive field is
+// `abilities.gen_option`, which Jimeng ignores when placed on the component.
+const DRAFT_CONTENT_VERSION = "3.0.2";
 const WEB_VERSION = "7.5.0";
 const MIN_VERSION = "3.0.2";
 
@@ -233,8 +238,6 @@ export async function generateImages(
   const model = modelConfig.modelReqKey || getModel(modelName);
 
   // 解析分辨率和比例
-  const isHighResModel = isHighResImageModel(modelName, modelConfig);
-  
   let resolutionType = resolution.toLowerCase(); // 用户指定优先
 
   if (!modelConfig.supportedResolutions.includes(resolutionType)) {
@@ -359,6 +362,12 @@ export async function generateImages(
           generate_type: 0,
         },
       },
+      gen_option: {
+        type: "",
+        id: util.uuid(),
+        gen_count: n,
+        generate_all: false,
+      },
     };
   } else {
     // 普通生成模式 abilities
@@ -384,11 +393,18 @@ export async function generateImages(
             width: finalWidth,
             resolution_type: resolutionType,
           },
+          generate_type: 0,
         },
         history_option: {
           type: "",
           id: util.uuid(),
         },
+      },
+      gen_option: {
+        type: "",
+        id: util.uuid(),
+        gen_count: n,
+        generate_all: false,
       },
     };
   }
@@ -414,13 +430,7 @@ export async function generateImages(
               modelReqKey: model,
               resolutionType: resolutionType,
               abilityList: [],
-              benefitCount:
-                modelConfig.benefitCountByResolution?.[resolutionType] ??
-                (modelName === "jimeng-image-5.0-lite" && resolutionType === "2k"
-                  ? 3
-                  : isHighResModel && resolutionType === "2k"
-                    ? 4
-                    : 1),
+              benefitCount: n,
               reportParams: {
                 enterSource: "generate",
                 vipSource: "generate",
@@ -440,7 +450,7 @@ export async function generateImages(
       min_version: MIN_VERSION,
       min_features: [],
       is_from_tsn: true,
-      version: DRAFT_VERSION,
+      version: DRAFT_CONTENT_VERSION,
       main_component_id: componentId,
       component_list: [
         {
@@ -457,13 +467,8 @@ export async function generateImages(
           },
           generate_type: hasReferenceImages ? "blend" : "generate",
           aigc_mode: "workbench",
+          gen_type: 1,
           abilities,
-          gen_option: {
-            type: "",
-            id: util.uuid(),
-            gen_count: n,
-            generate_all: false,
-          },
         },
       ],
     }),
