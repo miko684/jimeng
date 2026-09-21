@@ -70,7 +70,7 @@ const util = {
       () => callback(),
       null,
       false,
-      "Asia/Shanghai"
+      "Asia/Singapore"
     );
   },
 

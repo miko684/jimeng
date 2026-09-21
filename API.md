@@ -42,21 +42,21 @@
 所有业务接口均通过请求头 `Authorization` 鉴权，使用 Bearer 格式：
 
 ```http
-Authorization: Bearer <凭证>
+Authorization: Bearer sg-<凭证>
 ```
 
 支持两种凭证：
 
-### 2.1 直接使用即梦 Session ID（免配置，向后兼容）
+### 2.1 直接使用 SG Session ID（免配置，向后兼容）
 
-1. 登录 [即梦官网](https://jimeng.jianying.com/)；
+1. 登录 [Dreamina 新加坡国际版](https://dreamina.capcut.com/)；
 2. 按 `F12` 打开开发者工具 → `Application` → `Cookies`；
-3. 复制 `sessionid` 的值，作为 Bearer Token。
+3. 复制 `sessionid` 的值，在前面加上 `sg-` 作为 Bearer Token。
 
 多个账号用**英文逗号分隔**，服务自动随机轮询：
 
 ```http
-Authorization: Bearer sessionid_1,sessionid_2,sessionid_3
+Authorization: Bearer sg-sessionid_1,sg-sessionid_2,sg-sessionid_3
 ```
 
 ### 2.2 使用账号池 API Key（推荐，`jm_` 前缀）
@@ -203,11 +203,11 @@ curl -X POST http://localhost:8000/v1/images/generations \
 
 | 参数 | 类型 | 必填 | 默认值 | 说明 |
 |---|---|---|---|---|
-| `model` | string | 否 | `jimeng-video-seedance-2.0` | 视频模型 ID |
+| `model` | string | 否 | `jimeng-video-3.0` | SG 国际版视频模型 ID |
 | `prompt` | string | 是 | - | 提示词 |
 | `ratio` | string | 否 | 模型默认 | `16:9` `9:16` `1:1` `4:3` `3:4` `21:9` |
 | `resolution` | string | 否 | `720p` | `720p` `1080p` `4k`（按模型支持） |
-| `duration` | integer | 否 | 模型默认 | 时长秒数；Seedance 2.0 系列默认 5 秒，支持 4~15 秒；其他模型通常支持 5 或 10 秒 |
+| `duration` | integer | 否 | 模型默认 | 时长秒数；当前 SG 模型通常支持 5 或 10 秒 |
 | `file_paths` | string[] | 否 | `[]` | 首尾帧参考图：本地路径 / URL / base64 |
 | `response_format` | string | 否 | `url` | `url` 或 `b64_json` |
 
@@ -220,7 +220,7 @@ curl -X POST http://localhost:8000/v1/videos/generations \
   -H "Authorization: Bearer jm_xxx" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "jimeng-video-seedance-2.0",
+    "model": "jimeng-video-3.0",
     "prompt": "女孩在沙滩奔跑，夕阳逆光",
     "duration": 10
   }'
@@ -288,7 +288,7 @@ OpenAI Chat Completions 兼容。根据模型自动路由到图像或视频生�
 
 ```json
 {
-  "model": "jimeng-video-seedance-2.0",
+  "model": "jimeng-video-3.0",
   "messages": [
     { "role": "user", "content": "一只奔跑的柴犬，5秒" }
   ]
@@ -411,36 +411,24 @@ curl -X POST http://localhost:8000/token/points \
 
 | 模型 ID | 说明 | 分辨率 |
 |---|---|---|
-| `jimeng-image-5.0-pro` | Seedream 5.0 Pro（最新） | 4K / 2K / 1.5K |
 | `jimeng-image-5.0-lite` | Seedream 5.0 Lite（默认） | 4K / 2K |
 | `jimeng-image-4.7` | Seedream 4.7 | 4K / 2K |
 | `jimeng-image-4.6` | Seedream 4.6 | 4K / 2K |
 | `jimeng-image-4.5` | Seedream 4.5 | 4K / 2K |
 | `jimeng-image-4.1` | Seedream 4.1 | 4K / 2K |
 | `jimeng-image-4.0` | Seedream 4.0 | 4K / 2K |
-| `jimeng-image-3.1` | Seedream 3.1 | 1K |
 | `jimeng-image-3.0` | Seedream 3.0 | 1K |
-| `jimeng-image-2.0-pro` | Seedream 2.0 Pro | 仅 1K |
 
 ### 视频模型
 
 | 模型 ID | 说明 | 分辨率 | 时长 |
 |---|---|---|---|
-| `jimeng-video-seedance-2.5` | Seedance 2.5 | 720p | 5s / 10s |
-| `jimeng-video-seedance-2.0` | Seedance 2.0（默认） | 720p | 4s ~ 15s（默认 5s） |
-| `jimeng-video-seedance-2.0-pro` | `jimeng-video-seedance-2.0` 的兼容别名 | 720p | 4s ~ 15s（默认 5s） |
-| `jimeng-video-seedance-2.0-fast` | Seedance 2.0 Fast | 720p | 4s ~ 15s（默认 5s） |
-| `jimeng-video-seedance-2.0-mini` | Seedance 2.0 Mini | 720p | 4s ~ 15s（默认 5s） |
-| `jimeng-video-seedance-2.0-fast-vip` | Seedance 2.0 Fast VIP Vision（会员通道） | 720p | 4s ~ 15s（默认 5s） |
-| `jimeng-video-seedance-2.0-vip` | Seedance 2.0 VIP Vision（会员通道） | 720p / 1080p / 4K | 4s ~ 15s（默认 5s） |
-| `jimeng-video-seedance-1.5-pro` | Seedance 1.5 Pro | 720p | 5s / 10s |
 | `jimeng-video-3.0-pro` | 3.0 Pro | 720p | 5s / 10s |
 | `jimeng-video-3.0` | 3.0 标准 | 720p | 5s / 10s |
 | `jimeng-video-3.0-fast` | 3.0 快速 | 720p | 5s / 10s |
-| `jimeng-video-s2.0` | S2.0 轻量 | 720p | 5s |
 | `jimeng-video-2.0-pro` | 2.0 Pro | 720p | 5s |
 
-> 未传 `duration` 时，提示词中的 `5秒` / `10秒` 关键词会控制支持该时长的模型；Seedance 2.0 可直接传 4~15 的整数秒。提示词含 `横屏` / `竖屏` / `方形` 或比例数字可自动识别尺寸。
+> 未传 `duration` 时，提示词中的 `5秒` / `10秒` 关键词会控制支持该时长的模型。提示词含 `横屏` / `竖屏` / `方形` 或比例数字可自动识别尺寸。
 
 ---
 

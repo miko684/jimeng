@@ -6,13 +6,14 @@ import util from "@/lib/util.ts";
 import { getCredit, receiveCredit, request, uploadFile } from "./core.ts";
 import logger from "@/lib/logger.ts";
 import { JimengModelConfig, resolveImageModelConfig } from "./models.ts";
+import { SG_ASSISTANT_ID } from "@/lib/region.ts";
 
-const DEFAULT_ASSISTANT_ID = 513695;
+const DEFAULT_ASSISTANT_ID = SG_ASSISTANT_ID;
 export const DEFAULT_MODEL = "jimeng-image-5.0-lite";
 const DRAFT_VERSION = "3.3.20";
 // Draft content version matching the official web client payload (the
 // request-level da_version stays 3.3.20). The payload is kept field-for-field
-// aligned with what jimeng.jianying.com sends; the decisive field is
+// aligned with what Dreamina sends; the decisive field is
 // `abilities.gen_option`, which Jimeng ignores when placed on the component.
 const DRAFT_CONTENT_VERSION = "3.0.2";
 const WEB_VERSION = "7.5.0";
@@ -711,7 +712,7 @@ export async function generateImagesWithRetry(
       if (isInsufficientCredits) {
         throw new APIException(
           EX.API_IMAGE_GENERATION_INSUFFICIENT_POINTS,
-          "积分不足，已自动降至最低画质仍然不足，请前往即梦官网 https://jimeng.jianying.com 充值积分"
+          "积分不足，已自动降至最低画质仍然不足，请前往 Dreamina 新加坡国际版 https://dreamina.capcut.com/ 查看额度"
         );
       }
 

@@ -28,6 +28,23 @@ const WEB_VERSION = "7.5.0";
 const MODEL_CACHE_TTL_MS = Number(process.env.JIMENG_MODEL_CACHE_TTL_MS || 5 * 60 * 1000);
 const SEEDANCE_2_DURATIONS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 
+const SG_IMAGE_MODEL_IDS = new Set([
+  "jimeng-image-5.0-lite",
+  "jimeng-image-4.7",
+  "jimeng-image-4.6",
+  "jimeng-image-4.5",
+  "jimeng-image-4.1",
+  "jimeng-image-4.0",
+  "jimeng-image-3.0",
+]);
+
+const SG_VIDEO_MODEL_IDS = new Set([
+  "jimeng-video-3.0-pro",
+  "jimeng-video-3.0",
+  "jimeng-video-3.0-fast",
+  "jimeng-video-2.0-pro",
+]);
+
 const IMAGE_REQ_KEY_IDS: Record<string, string> = {
   high_aes_general_v50p_large: "jimeng-image-5.0-pro",
   high_aes_general_v50: "jimeng-image-5.0-lite",
@@ -370,8 +387,21 @@ function cloneModelConfig(model: JimengModelConfig): JimengModelConfig {
 export function getStaticModelConfigs(type?: JimengModelType) {
   const models = [...STATIC_IMAGE_MODELS, ...STATIC_VIDEO_MODELS];
   return models
-    .filter((model) => !type || model.type === type)
+    .filter((model) => (!type || model.type === type) && isSupportedSingaporeModel(model))
     .map(cloneModelConfig);
+}
+
+/**
+ * 判断模型是否属于当前固定的新加坡国际区能力范围。
+ *
+ * @param model 模型配置
+ * @returns 是否允许对外暴露
+ */
+function isSupportedSingaporeModel(model: JimengModelConfig): boolean {
+  if (model.source === "dynamic") return true;
+  return model.type === "image"
+    ? SG_IMAGE_MODEL_IDS.has(model.id)
+    : SG_VIDEO_MODEL_IDS.has(model.id);
 }
 
 function getStaticModelConfig(modelIdOrReqKey: string, type?: JimengModelType) {
@@ -762,7 +792,7 @@ export async function listModelConfigs(
   }
 
   return mergeModelConfigs(staticModels, dynamicModels).filter(
-    (model) => !options.type || model.type === options.type
+    (model) => (!options.type || model.type === options.type) && isSupportedSingaporeModel(model)
   );
 }
 
@@ -782,7 +812,7 @@ export async function resolveModelConfig(
   const staticMatch = getStaticModelConfig(modelIdOrReqKey, type);
   if (staticMatch) return staticMatch;
   return getStaticModelConfig(
-    type === "image" ? "jimeng-image-5.0-lite" : "jimeng-video-seedance-2.0",
+    type === "image" ? "jimeng-image-5.0-lite" : "jimeng-video-3.0",
     type
   )!;
 }

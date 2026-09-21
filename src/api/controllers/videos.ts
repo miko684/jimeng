@@ -6,9 +6,10 @@ import util from "@/lib/util.ts";
 import { getCredit, receiveCredit, request, uploadFile } from "./core.ts";
 import logger from "@/lib/logger.ts";
 import { JimengModelConfig, resolveVideoModelConfig } from "./models.ts";
+import { SG_ASSISTANT_ID } from "@/lib/region.ts";
 
-const DEFAULT_ASSISTANT_ID = 513695;
-export const DEFAULT_MODEL = "jimeng-video-seedance-2.0";
+const DEFAULT_ASSISTANT_ID = SG_ASSISTANT_ID;
+export const DEFAULT_MODEL = "jimeng-video-3.0";
 const DRAFT_VERSION = "3.3.20";
 const WEB_VERSION = "7.5.0";
 const DEFAULT_VIDEO_DURATIONS = [5, 10];
@@ -776,7 +777,7 @@ export async function generateVideoWithRetry(
         // 已是最低配置仍然失败
         throw new APIException(
           EX.API_IMAGE_GENERATION_INSUFFICIENT_POINTS,
-          "积分不足，已自动降至最低画质与时长仍然不足，请前往即梦官网 https://jimeng.jianying.com 充值积分"
+          "积分不足，已自动降至最低画质与时长仍然不足，请前往 Dreamina 新加坡国际版 https://dreamina.capcut.com/ 查看额度"
         );
       }
     }

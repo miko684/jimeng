@@ -4,6 +4,7 @@ import fs from "fs-extra";
 import path from "path";
 
 import { getCredit, request } from "@/api/controllers/core.ts";
+import { normalizeSingaporeToken } from "@/lib/region.ts";
 
 const DB_PATH = process.env.DB_PATH || "./data/jimeng.db";
 const TABLE = "jimeng_accounts";
@@ -112,7 +113,7 @@ function parseJson<T>(value: string | null | undefined, fallback: T): T {
 
 function extractSessionId(credential: string, kind: AccountCredentialKind): string {
   const raw = credential.trim();
-  if (kind === "sessionid") return raw;
+  if (kind === "sessionid") return normalizeSingaporeToken(raw);
 
   // 兼容浏览器开发者工具复制出来的多种 Cookie 形式：
   // `sessionid=...`、`Cookie: sessionid=...`、换行分隔以及带空格的键值对。
@@ -136,7 +137,7 @@ function extractSessionId(credential: string, kind: AccountCredentialKind): stri
   // 也允许直接粘贴 sessionId，方便从接口或环境变量中复制。
   if (!value && !normalized.includes("=") && /^[^\s;]+$/.test(raw)) value = raw;
   if (!value) throw new Error("Cookie 中缺少 sessionid、sessionid_ss 或 sid_tt");
-  try { return decodeURIComponent(value); } catch { return value; }
+  try { return normalizeSingaporeToken(decodeURIComponent(value)); } catch { return normalizeSingaporeToken(value); }
 }
 
 function getEncryptionKey(): Buffer {

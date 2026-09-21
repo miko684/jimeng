@@ -3,6 +3,7 @@ import _ from "lodash";
 import { tokenSplit } from "@/api/controllers/core.ts";
 import accountPool from "@/lib/account-pool.ts";
 import db, { touchApiKey } from "@/lib/database.ts";
+import { assertSingaporeToken } from "@/lib/region.ts";
 
 export interface ResolvedCredential {
   token: string;
@@ -35,7 +36,8 @@ export async function resolveAuthorization(authorization: string): Promise<Resol
     throw new Error("API key is invalid or disabled");
   }
 
-  return { token: _.sample(tokens) as string };
+  const singaporeTokens = tokens.map(assertSingaporeToken);
+  return { token: _.sample(singaporeTokens) as string };
 }
 
 export function markCredentialSuccess(credential: ResolvedCredential): void {

@@ -406,7 +406,7 @@ export async function createCompletionStream(
                 index: 1,
                 delta: {
                   role: "assistant",
-                  content: "\n\n视频生成时间较长（已等待2分钟），但视频可能仍在生成中。\n\n请前往即梦官网查看您的视频：\n1. 访问 https://jimeng.jianying.com/ai-tool/video/generate\n2. 登录后查看您的创作历史\n3. 如果视频已生成，您可以直接在官网下载或分享\n\n您也可以继续等待，系统将在后台继续尝试获取视频（最长约20分钟）。",
+                  content: "\n\n视频生成时间较长（已等待2分钟），但视频可能仍在生成中。\n\n请前往 Dreamina 新加坡国际版查看您的视频：\n1. 访问 https://dreamina.capcut.com/\n2. 登录后查看您的创作历史\n3. 如果视频已生成，您可以直接在官网查看或分享\n\n您也可以继续等待，系统将在后台继续尝试获取视频（最长约20分钟）。",
                 },
                 finish_reason: "stop",
               },
@@ -516,11 +516,11 @@ export async function createCompletionStream(
 
           // 如果是历史记录不存在的错误，提供更具体的建议
           if (err.message.includes("历史记录不存在")) {
-            errorMessage += "\n\n可能原因：\n1. 视频生成请求已发送，但API无法获取历史记录\n2. 视频生成服务暂时不可用\n3. 历史记录ID无效或已过期\n\n建议操作：\n1. 请前往即梦官网查看您的视频是否已生成：https://jimeng.jianying.com/ai-tool/video/generate\n2. 如果官网已显示视频，但这里无法获取，可能是API连接问题\n3. 如果官网也没有显示，请稍后再试或重新生成视频";
+            errorMessage += "\n\n可能原因：\n1. 视频生成请求已发送，但 API 无法获取历史记录\n2. Dreamina 国际版服务暂时不可用\n3. 历史记录 ID 无效或已过期\n\n建议操作：\n1. 请前往 Dreamina 新加坡国际版查看视频是否已生成：https://dreamina.capcut.com/\n2. 如果官网已显示视频，但这里无法显示，可能是获取结果时出现了问题\n3. 如果官网也没有显示，请稍后再试或重新生成视频";
           } else if (err.message.includes("获取视频生成结果超时")) {
-            errorMessage += "\n\n视频生成可能仍在进行中，但等待时间已超过系统设定的限制。\n\n请前往即梦官网查看您的视频：https://jimeng.jianying.com/ai-tool/video/generate\n\n如果您在官网上看到视频已生成，但这里无法显示，可能是因为：\n1. 获取结果的过程超时\n2. 网络连接问题\n3. API访问限制";
+            errorMessage += "\n\n视频生成可能仍在进行中，但等待时间已超过系统设定的限制。\n\n请前往 Dreamina 新加坡国际版查看您的视频：https://dreamina.capcut.com/\n\n如果您在官网上看到视频已生成，但这里无法显示，可能是因为：\n1. 获取结果的过程超时\n2. 网络连接问题\n3. API 访问限制";
           } else {
-            errorMessage += "\n\n如果您在即梦官网看到已生成的视频，可能是获取结果时出现了问题。\n\n请访问即梦官网查看您的创作历史：https://jimeng.jianying.com/ai-tool/video/generate";
+            errorMessage += "\n\n如果您在 Dreamina 新加坡国际版看到已生成的视频，可能是获取结果时出现了问题。\n\n请访问 Dreamina 官网查看您的创作历史：https://dreamina.capcut.com/";
           }
 
           // 添加历史ID信息，方便用户在官网查找

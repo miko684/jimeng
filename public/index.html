@@ -198,14 +198,14 @@
         <div>
           <div class="eyebrow">即梦 API · 本地服务</div>
           <h1 class="page-title">管理控制台</h1>
-          <p class="page-desc">集中管理 API 密钥、即梦账号池与服务运行状态</p>
+          <p class="page-desc">集中管理 API 密钥、SG 账号池与服务运行状态</p>
         </div>
         <div class="header-actions"><button class="btn btn-secondary" onclick="showPasswordModal()">修改密码</button><button class="btn btn-secondary" onclick="handleLogout()">退出登录</button></div>
       </header>
 
       <nav class="tabs-wrap" aria-label="控制台导航">
         <button class="tab-btn active" data-tab="keys"><span class="tab-icon">钥</span>API 密钥</button>
-        <button class="tab-btn" data-tab="accounts"><span class="tab-icon">号</span>即梦账号池</button>
+        <button class="tab-btn" data-tab="accounts"><span class="tab-icon">号</span>SG 账号池</button>
         <button class="tab-btn" data-tab="stats"><span class="tab-icon">览</span>运行概览</button>
         <button class="tab-btn" data-tab="logs"><span class="tab-icon">志</span>实时日志</button>
         <button class="tab-btn" data-tab="media"><span class="tab-icon">媒</span>媒体资源</button>
@@ -226,7 +226,7 @@
       </section>
 
       <section id="tab-accounts" class="tab-content">
-        <div class="section-heading"><div><h2>即梦账号池</h2><p>保存多个账号 Cookie，服务会自动轮询可用账号。</p></div><button class="btn btn-secondary" onclick="loadAccounts()">刷新状态</button></div>
+        <div class="section-heading"><div><h2>SG 账号池</h2><p>保存多个新加坡国际区账号凭证，服务会自动轮询可用账号。</p></div><button class="btn btn-secondary" onclick="loadAccounts()">刷新状态</button></div>
         <div class="stats-grid">
           <div class="stat-card"><div class="stat-label">账号总数</div><div id="account-total" class="stat-value accent">0</div><div class="stat-note">已纳入账号池</div></div>
           <div class="stat-card"><div class="stat-label">运行中</div><div id="account-active" class="stat-value green">0</div><div class="stat-note">允许被调度</div></div>
@@ -234,7 +234,7 @@
           <div class="stat-card"><div class="stat-label">Cookie 安全</div><div class="stat-value" style="font-size:22px">已加密</div><div class="stat-note">服务端仅保存加密凭证</div></div>
         </div>
         <div class="account-layout">
-          <div class="form-card"><h3>添加即梦账号</h3><p>建议为账号设置容易识别的名称。Cookie 不会回显到页面。</p><div class="form-group"><label for="account-name">账号名称</label><input id="account-name" type="text" placeholder="例如：主账号、备用账号 1" /></div><div class="form-group"><label for="account-cookie">Cookie</label><textarea id="account-cookie" rows="5" placeholder="粘贴包含 sessionid 的 Cookie"></textarea></div><button class="btn btn-primary" onclick="createAccount()">保存到账号池</button></div>
+          <div class="form-card"><h3>添加新加坡国际区账号</h3><p>仅支持 Dreamina 新加坡国际区账号。Cookie 不会回显到页面，系统会按 SG 区域处理凭证。</p><div class="form-group"><label for="account-name">账号名称</label><input id="account-name" type="text" placeholder="例如：SG 主账号、SG 备用账号 1" /></div><div class="form-group"><label for="account-cookie">SG Cookie 或 sessionid</label><textarea id="account-cookie" rows="5" placeholder="粘贴新加坡国际区账号 Cookie；sessionid 可不含 sg- 前缀"></textarea></div><button class="btn btn-primary" onclick="createAccount()">保存到 SG 账号池</button></div>
           <div class="panel account-table-panel"><div class="panel-head"><div><h3>账号列表</h3><p>可单独启用、停用或刷新会员状态</p></div></div><div class="notice">Cookie 属于敏感凭证，请勿分享给他人。账号状态查询失败时，可点击“刷新状态”重试。</div><div class="table-scroll"><table><thead><tr><th>名称</th><th>凭证</th><th>状态</th><th>免费积分</th><th>会员状态</th><th>操作</th></tr></thead><tbody id="accounts-table"></tbody></table></div></div>
         </div>
       </section>
@@ -280,7 +280,7 @@
       function apiError(payload, fallback) { return payload?.message || payload?.error || payload?.data?.message || fallback; }
       function isApiFailure(payload) { return payload && typeof payload.code === "number" && payload.code !== 0; }
       async function loadAccounts() { try { const res = await fetch("/account-pool/", { credentials: "include" }); const payload = await res.json(); if (!res.ok || isApiFailure(payload) || !Array.isArray(payload)) { showToast(apiError(payload, "账号列表读取失败")); return; } const accounts = payload; const active = accounts.filter((a) => a.enabled).length; $("account-total").textContent = accounts.length; $("account-active").textContent = active; $("account-disabled").textContent = accounts.length - active; $("accounts-table").innerHTML = accounts.map((a) => `<tr><td><strong>${esc(a.name || "未命名账号")}</strong></td><td><code>${esc(a.credentialPreview || "********")}</code></td><td>${badge(a.enabled)}</td><td>${esc(a.status?.totalCredit ?? "—")}</td><td>${esc(membershipText(a.status?.membership))}</td><td><div class="row-actions"><button class="btn btn-secondary" onclick="setAccountStatus('${esc(a.id)}', ${!a.enabled})">${a.enabled ? "停用" : "启用"}</button><button class="btn btn-secondary" onclick="refreshAccount('${esc(a.id)}')">刷新状态</button><button class="btn btn-danger" onclick="deleteAccount('${esc(a.id)}')">删除</button></div></td></tr>`).join("") || emptyRow(6, "还没有账号，请从左侧添加"); } catch (e) { console.error(e); showToast("账号列表读取失败"); } }
-      async function createAccount() { const name = $("account-name").value.trim(), cookie = $("account-cookie").value.trim(); if (!name || !cookie) return showToast("请填写账号名称和 Cookie"); try { const res = await fetch("/account-pool/", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, cookie }) }); const data = await res.json(); if (!res.ok || isApiFailure(data)) return showToast(apiError(data, "添加账号失败")); $("account-name").value = ""; $("account-cookie").value = ""; await loadAccounts(); showToast("账号已加入账号池"); } catch (e) { console.error(e); showToast("添加账号失败，请检查服务日志"); } }
+      async function createAccount() { const name = $("account-name").value.trim(), cookie = $("account-cookie").value.trim(); if (!name || !cookie) return showToast("请填写 SG 账号名称和凭证"); try { const res = await fetch("/account-pool/", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, cookie }) }); const data = await res.json(); if (!res.ok || isApiFailure(data)) return showToast(apiError(data, "添加 SG 账号失败")); $("account-name").value = ""; $("account-cookie").value = ""; await loadAccounts(); showToast("SG 账号已加入账号池"); } catch (e) { console.error(e); showToast("添加 SG 账号失败，请检查服务日志"); } }
       async function setAccountStatus(id, enabled) { const res = await fetch(`/account-pool/${id}/enabled`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ enabled }) }); if (res.ok) { loadAccounts(); showToast(enabled ? "账号已启用" : "账号已停用"); } }
       async function refreshAccount(id) { const res = await fetch(`/account-pool/${id}/refresh-status`, { method: "POST", credentials: "include" }); const data = await res.json(); if (!res.ok || isApiFailure(data)) showToast(apiError(data, "状态查询失败")); else showToast("账号状态已更新"); loadAccounts(); }
       async function deleteAccount(id) { if (!confirm("确定从账号池删除这个账号吗？")) return; const res = await fetch(`/account-pool/${id}`, { method: "DELETE", credentials: "include" }); if (res.ok) { loadAccounts(); showToast("账号已删除"); } }
