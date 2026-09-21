@@ -78,7 +78,11 @@ export async function autoLoginDreamina(email: string, password: string): Promis
       'input[placeholder*="Enter email" i]'
     ]);
 
-    await emailInput.waitFor({ state: "visible", timeout: 30_000 });
+    try {
+      await emailInput.waitFor({ state: "visible", timeout: 60_000 });
+    } catch {
+      throw new Error(`CapCut 登录页未出现邮箱输入框（当前地址：${page.url()}）`);
+    }
     await emailInput.fill(email);
 
     const passwordSelectors = [
@@ -93,11 +97,11 @@ export async function autoLoginDreamina(email: string, password: string): Promis
         '[role="button"]:has-text("Continue")',
         'text="Continue"'
       ]);
-      await continueButton.waitFor({ state: "visible", timeout: 30_000 });
+      await continueButton.waitFor({ state: "visible", timeout: 60_000 });
       await continueButton.click();
       passwordInput = firstVisible(page, passwordSelectors);
     }
-    await passwordInput.waitFor({ state: "visible", timeout: 30_000 });
+    await passwordInput.waitFor({ state: "visible", timeout: 60_000 });
     await passwordInput.fill(password);
 
     const submitButton = firstVisible(page, [
@@ -106,7 +110,7 @@ export async function autoLoginDreamina(email: string, password: string): Promis
       'button:has-text("Sign in")',
       'button:has-text("Continue")'
     ]);
-    await submitButton.waitFor({ state: "visible", timeout: 30_000 });
+    await submitButton.waitFor({ state: "visible", timeout: 60_000 });
     await submitButton.click();
 
     const deadline = Date.now() + LOGIN_TIMEOUT;
