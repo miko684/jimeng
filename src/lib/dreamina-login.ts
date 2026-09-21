@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 
-const DREAMINA_HOME = "https://dreamina.capcut.com/";
+const CAPCUT_LOGIN = "https://www.capcut.com/login?enter_from=web";
 const LOGIN_TIMEOUT = 120_000;
 
 function firstVisible(page: import("playwright").Page, selectors: string[]) {
@@ -40,15 +40,26 @@ export async function autoLoginDreamina(email: string, password: string): Promis
   const page = await context.newPage();
 
   try {
-    await page.goto(DREAMINA_HOME, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    // Dreamina now delegates email/password authentication to CapCut's
+    // unified login page. The Dreamina landing page only redirects to the
+    // workspace and does not render the email form itself.
+    await page.goto(CAPCUT_LOGIN, { waitUntil: "domcontentloaded", timeout: 60_000 });
 
     const loginButton = firstVisible(page, [
+      'text="Continue with email"',
+      'button:has-text("Continue with email")',
+      '[role="button"]:has-text("Continue with email")',
       'button:has-text("Log in")',
       'button:has-text("Sign in")',
       '[role="button"]:has-text("Log in")',
       '[role="button"]:has-text("Sign in")'
     ]);
-    if (await loginButton.count()) await loginButton.click();
+    try {
+      await loginButton.waitFor({ state: "visible", timeout: 60_000 });
+      await loginButton.click();
+    } catch {
+      // Some CapCut variants render the email field directly.
+    }
 
     const emailOption = firstVisible(page, [
       'button:has-text("Sign in with email")',
@@ -61,17 +72,32 @@ export async function autoLoginDreamina(email: string, password: string): Promis
     const emailInput = firstVisible(page, [
       'input[type="email"]',
       'input[name="email"]',
+      'input[name="username"]',
       'input[autocomplete="username"]',
-      'input[placeholder*="email" i]'
-    ]);
-    const passwordInput = firstVisible(page, [
-      'input[type="password"]',
-      'input[name="password"]',
-      'input[autocomplete="current-password"]'
+      'input[placeholder*="email" i]',
+      'input[placeholder*="Enter email" i]'
     ]);
 
     await emailInput.waitFor({ state: "visible", timeout: 30_000 });
     await emailInput.fill(email);
+
+    const passwordSelectors = [
+      'input[type="password"]',
+      'input[name="password"]',
+      'input[autocomplete="current-password"]'
+    ];
+    let passwordInput = firstVisible(page, passwordSelectors);
+    if (!(await passwordInput.count())) {
+      const continueButton = firstVisible(page, [
+        'button:has-text("Continue")',
+        '[role="button"]:has-text("Continue")',
+        'text="Continue"'
+      ]);
+      await continueButton.waitFor({ state: "visible", timeout: 30_000 });
+      await continueButton.click();
+      passwordInput = firstVisible(page, passwordSelectors);
+    }
+    await passwordInput.waitFor({ state: "visible", timeout: 30_000 });
     await passwordInput.fill(password);
 
     const submitButton = firstVisible(page, [
@@ -80,6 +106,7 @@ export async function autoLoginDreamina(email: string, password: string): Promis
       'button:has-text("Sign in")',
       'button:has-text("Continue")'
     ]);
+    await submitButton.waitFor({ state: "visible", timeout: 30_000 });
     await submitButton.click();
 
     const deadline = Date.now() + LOGIN_TIMEOUT;
