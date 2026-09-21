@@ -2,6 +2,8 @@ import Request from '@/lib/request/Request.ts';
 import Response from '@/lib/response/Response.ts';
 import db from '@/lib/database.ts';
 import { getCredit } from '@/api/controllers/core.ts';
+import accountPool from '@/lib/account-pool.ts';
+import { autoLoginDreamina } from '@/lib/dreamina-login.ts';
 
 function sessionUser(request: Request): number | null {
   const sessionId = request.headers.cookie?.match(/(?:^|;\s*)session=([^;]+)/)?.[1];
@@ -64,6 +66,25 @@ export default {
       const sessionId = request.headers.cookie?.match(/(?:^|;\s*)session=([^;]+)/)?.[1];
       if (sessionId) db.deleteSession(sessionId);
       return new Response({ success: true }, { statusCode: 200, headers: { 'Set-Cookie': 'session=; Path=/; HttpOnly; Max-Age=0' } });
+    },
+    '/auto-login': async (request: Request) => {
+      const error = authError(request); if (error) return error;
+      const email = typeof request.body?.email === 'string' ? request.body.email.trim() : '';
+      const password = typeof request.body?.password === 'string' ? request.body.password : '';
+      if (!email || !password) return new Response({ error: '邮箱和密码不能为空' }, { statusCode: 400 });
+
+      try {
+        const sessionToken = await autoLoginDreamina(email, password);
+        const account = accountPool.create({
+          name: `Dreamina ${email.split('@')[0]}`,
+          sessionId: sessionToken,
+          metadata: { source: 'auto-login' }
+        });
+        return { success: true, message: '账号登录成功，sessionid 已存入账号池', accountId: account.id };
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : '未知错误';
+        return new Response({ error: `自动登录失败: ${message}` }, { statusCode: 400 });
+      }
     },
     '/password': async (request: Request) => {
       const userId = sessionUser(request);

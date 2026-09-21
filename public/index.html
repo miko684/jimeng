@@ -138,6 +138,18 @@
       .form-card .btn { width: 100%; }
       .account-table-panel { min-width: 0; }
       .account-table-panel .panel-head { padding-bottom: 16px; }
+      .auto-login-section { margin-bottom: 18px; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(145deg, rgba(20, 31, 55, .9), rgba(13, 21, 38, .9)); }
+      .auto-login-section .section-header { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+      .auto-login-section h3 { font-size: 15px; }
+      .mode-switch { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: rgba(7, 12, 25, .45); }
+      .mode-btn { padding: 6px 14px; border: 0; border-radius: 6px; color: var(--text-soft); background: transparent; cursor: pointer; font-size: 13px; }
+      .mode-btn.active { color: var(--text); background: rgba(255, 255, 255, .1); box-shadow: 0 1px 3px rgba(0, 0, 0, .18); }
+      .login-form { display: flex; flex-direction: column; gap: 12px; }
+      .login-form.hidden { display: none; }
+      .status-message { min-height: 18px; color: var(--text-faint); font-size: 13px; }
+      .status-message.success { color: var(--green); }
+      .status-message.error { color: var(--red); }
+      .status-message.loading { color: var(--yellow); }
 
       /* 其他页面 */
       .logs-toolbar, .media-filters { display: flex; gap: 9px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -233,6 +245,26 @@
           <div class="stat-card"><div class="stat-label">已停用</div><div id="account-disabled" class="stat-value">0</div><div class="stat-note">不会参与轮询</div></div>
           <div class="stat-card"><div class="stat-label">Cookie 安全</div><div class="stat-value" style="font-size:22px">已加密</div><div class="stat-note">服务端仅保存加密凭证</div></div>
         </div>
+        <div class="auto-login-section">
+          <div class="section-header">
+            <h3>添加 Dreamina 账号</h3>
+            <div class="mode-switch">
+              <button id="btn-mode-auto" class="mode-btn active" onclick="switchLoginMode('auto')">邮箱密码自动登录</button>
+              <button id="btn-mode-manual" class="mode-btn" onclick="switchLoginMode('manual')">手动输入 sessionid</button>
+            </div>
+          </div>
+          <div id="auto-login-form" class="login-form">
+            <div class="form-group"><label for="auto-email">Dreamina 邮箱</label><input id="auto-email" type="email" placeholder="example@email.com" autocomplete="off" /></div>
+            <div class="form-group"><label for="auto-password">密码</label><input id="auto-password" type="password" placeholder="输入账号密码" autocomplete="off" /></div>
+            <button id="btn-auto-login" class="btn btn-primary" onclick="handleAutoLogin()">登录并添加账号</button>
+            <div id="auto-login-status" class="status-message"></div>
+          </div>
+          <div id="manual-login-form" class="login-form hidden">
+            <div class="form-group"><label for="manual-sessionid">Session ID</label><input id="manual-sessionid" type="text" placeholder="粘贴 sg- 开头的 sessionid" autocomplete="off" /></div>
+            <button id="btn-manual-add" class="btn btn-primary" onclick="handleManualAdd()">添加账号</button>
+            <div id="manual-login-status" class="status-message"></div>
+          </div>
+        </div>
         <div class="account-layout">
           <div class="form-card"><h3>添加新加坡国际区账号</h3><p>仅支持 Dreamina 新加坡国际区账号。Cookie 不会回显到页面，系统会按 SG 区域处理凭证。</p><div class="form-group"><label for="account-name">账号名称</label><input id="account-name" type="text" placeholder="例如：SG 主账号、SG 备用账号 1" /></div><div class="form-group"><label for="account-cookie">SG Cookie 或 sessionid</label><textarea id="account-cookie" rows="5" placeholder="粘贴新加坡国际区账号 Cookie；sessionid 可不含 sg- 前缀"></textarea></div><button class="btn btn-primary" onclick="createAccount()">保存到 SG 账号池</button></div>
           <div class="panel account-table-panel"><div class="panel-head"><div><h3>账号列表</h3><p>可单独启用、停用或刷新会员状态</p></div></div><div class="notice">Cookie 属于敏感凭证，请勿分享给他人。账号状态查询失败时，可点击“刷新状态”重试。</div><div class="table-scroll"><table><thead><tr><th>名称</th><th>凭证</th><th>状态</th><th>免费积分</th><th>会员状态</th><th>操作</th></tr></thead><tbody id="accounts-table"></tbody></table></div></div>
@@ -284,6 +316,33 @@
       async function setAccountStatus(id, enabled) { const res = await fetch(`/account-pool/${id}/enabled`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ enabled }) }); if (res.ok) { loadAccounts(); showToast(enabled ? "账号已启用" : "账号已停用"); } }
       async function refreshAccount(id) { const res = await fetch(`/account-pool/${id}/refresh-status`, { method: "POST", credentials: "include" }); const data = await res.json(); if (!res.ok || isApiFailure(data)) showToast(apiError(data, "状态查询失败")); else showToast("账号状态已更新"); loadAccounts(); }
       async function deleteAccount(id) { if (!confirm("确定从账号池删除这个账号吗？")) return; const res = await fetch(`/account-pool/${id}`, { method: "DELETE", credentials: "include" }); if (res.ok) { loadAccounts(); showToast("账号已删除"); } }
+
+      function setLoginStatus(id, message, kind = "") { const element = $(id); element.textContent = message; element.className = `status-message ${kind}`; }
+      function switchLoginMode(mode) { const auto = mode === "auto"; $("auto-login-form").classList.toggle("hidden", !auto); $("manual-login-form").classList.toggle("hidden", auto); $("btn-mode-auto").classList.toggle("active", auto); $("btn-mode-manual").classList.toggle("active", !auto); }
+      async function handleAutoLogin() {
+        const email = $("auto-email").value.trim(), password = $("auto-password").value, button = $("btn-auto-login");
+        if (!email || !password) return setLoginStatus("auto-login-status", "请填写 Dreamina 邮箱和密码", "error");
+        button.disabled = true; setLoginStatus("auto-login-status", "正在登录 Dreamina，请稍候…", "loading");
+        try {
+          const res = await fetch("/dashboard/auto-login", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
+          const data = await res.json();
+          if (!res.ok || isApiFailure(data)) throw new Error(apiError(data, "自动登录失败"));
+          $("auto-email").value = ""; $("auto-password").value = ""; setLoginStatus("auto-login-status", "登录成功，账号已安全加入账号池", "success"); await loadAccounts();
+        } catch (error) { console.error(error); setLoginStatus("auto-login-status", error.message || "自动登录失败，请检查服务日志", "error"); }
+        finally { button.disabled = false; }
+      }
+      async function handleManualAdd() {
+        const sessionId = $("manual-sessionid").value.trim(), button = $("btn-manual-add");
+        if (!sessionId) return setLoginStatus("manual-login-status", "请填写 sessionid", "error");
+        button.disabled = true; setLoginStatus("manual-login-status", "正在添加账号…", "loading");
+        try {
+          const res = await fetch("/account-pool/", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: `手动账号 ${new Date().toLocaleString("zh-CN", { hour12: false })}`, sessionId }) });
+          const data = await res.json();
+          if (!res.ok || isApiFailure(data)) throw new Error(apiError(data, "手动添加失败"));
+          $("manual-sessionid").value = ""; setLoginStatus("manual-login-status", "账号已安全加入账号池", "success"); await loadAccounts();
+        } catch (error) { console.error(error); setLoginStatus("manual-login-status", error.message || "手动添加失败，请检查服务日志", "error"); }
+        finally { button.disabled = false; }
+      }
 
       async function loadStats() { try { const res = await fetch("/dashboard/stats", { credentials: "include" }); if (!res.ok) return; const data = await res.json(); $("total-calls").textContent = data.totals?.total_calls || 0; $("total-credits").textContent = data.totals?.total_credits || 0; $("active-keys").textContent = data.keyStats?.length || 0; $("models-used").textContent = data.modelStats?.length || 0; $("key-stats-table").innerHTML = data.keyStats?.map((k) => `<tr><td><code>${esc(k.key_preview)}</code></td><td>${esc(k.total_calls)}</td><td>${esc(k.total_credits)}</td><td>${esc(k.remaining_credits || 0)}</td><td>${dateText(k.last_used)}</td></tr>`).join("") || emptyRow(5); $("model-stats-table").innerHTML = data.modelStats?.map((m) => `<tr><td>${esc(m.model)}</td><td>${esc(m.total_calls)}</td><td>${esc(m.total_credits)}</td></tr>`).join("") || emptyRow(3); } catch (e) { console.error(e); } }
       async function loadLogs() { try { const level = $("log-level").value, res = await fetch(`/dashboard/logs?level=${level}&limit=200`, { credentials: "include" }); if (!res.ok) return; const logs = await res.json(); $("log-container").innerHTML = logs.map((log) => `<div class="log-entry"><span class="log-time">${esc(log.created_at)}</span><span class="log-level ${esc(log.level)}">${esc(log.level)}</span><span class="log-message">${esc(log.message)}</span></div>`).join("") || `<div class="loading">暂无日志</div>`; } catch (e) { console.error(e); } }
