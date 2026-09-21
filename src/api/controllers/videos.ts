@@ -258,6 +258,9 @@ function extractVideoUrlFromResponse(result: any) {
   const historyRecords = [
     ...(result?.history_list || []),
     ...(result?.history_records || []),
+    ...(Array.isArray(result?.data)
+      ? result.data
+      : Object.values(result?.data || {})),
   ];
   for (const record of historyRecords) {
     const url = extractVideoUrlFromItemList(record?.item_list || []);
@@ -640,6 +643,10 @@ export async function generateVideo(
         historyData = result.history_records[0];
       else if (result.history_list?.length)
         historyData = result.history_list[0];
+      else if (result.data && typeof result.data === "object")
+        historyData = Array.isArray(result.data)
+          ? result.data[0]
+          : Object.values(result.data)[0];
 
       if (!historyData) {
         retryCount++;
